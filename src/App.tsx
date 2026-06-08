@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { fetchTemperatura, fetchPrecipitaciones } from './services/clima';
-import WeatherModal from './components/weatherModal';
+import WeatherModal from './components/WeatherModal';
 
 
 const CIUDADES = {
@@ -96,7 +96,7 @@ function App() {
             style={buttonStyle}
             className="btn-secondary"
           >
-            <span style={buttonIconStyle}>💧</span>
+            <span style={buttonIconStyle}>☔</span>
             Precipitaciones
           </button>
         </div>
@@ -135,20 +135,23 @@ function App() {
 const containerStyle = {
   minHeight: '100vh',
   padding: '20px',
-  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3d4e6 100%)',
+  /*background: 'linear-gradient(135deg, #f5f7fa 0%, #c3d4e6 100%)',*/
   fontFamily: "'Inter', sans-serif",
   position: 'relative' as const,
   overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column' as const,   
+  justifyContent: 'center',
+  alignItems: 'center',
 };
 
 const bgDecorativeStyle = {
   position: 'fixed' as const,
-  top: '-50%',
-  right: '-10%',
+
   width: '800px',
   height: '800px',
   borderRadius: '50%',
-  background: 'radial-gradient(circle, rgba(41, 128, 185, 0.08) 0%, transparent 70%)',
+  background: 'radial-gradient(circle, rgba(41, 128, 185, 0.6) 0%, transparent 70%)',
   pointerEvents: 'none' as const,
   zIndex: 0,
 };
@@ -164,22 +167,23 @@ const titleStyle = {
   fontSize: '48px',
   fontWeight: 700,
   fontFamily: "'Syne', sans-serif",
-  color: '#1a3a52',
+  color: '#fff',
   marginBottom: '8px',
   letterSpacing: '-1px',
 };
 
 const subtitleStyle = {
   fontSize: '16px',
-  color: '#5a7285',
+  color: '#d3ebffff',
   fontWeight: 400,
   letterSpacing: '0.5px',
 };
 
 const cardStyle = {
   maxWidth: '500px',
-  margin: '0 auto 40px',
-  background: 'rgba(53, 105, 143, 0.95)',
+  width: '100%', //para mejorar el responsive
+  margin: '0 0 40px',
+  background: 'rgba(53, 105, 143, 0.75)',
   borderRadius: '20px',
   padding: '40px 30px',
   boxShadow: '0 20px 60px rgba(26, 58, 82, 0.3)',
@@ -227,8 +231,8 @@ const buttonStyle = {
   padding: '14px 20px',
   fontSize: '15px',
   fontWeight: 600,
-  border: 'none',
-  borderRadius: '12px',
+  border: '1px solid rgba(255,255,255,0.15)',
+  borderRadius: '16px',
   color: '#000000',
   cursor: 'pointer',
   display: 'flex' as const,
@@ -237,11 +241,13 @@ const buttonStyle = {
   gap: '8px',
   transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
   fontFamily: "'Inter', sans-serif",
-  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+  backdropFilter: 'blur(10px)',
+  position: 'relative' as const,
+  overflow: 'hidden' as const,
 };
 
 const buttonIconStyle = {
-  fontSize: '18px',
+  fontSize: '20px',
  };
 
 export default App;
