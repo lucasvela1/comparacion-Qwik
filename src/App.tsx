@@ -1,28 +1,94 @@
-import { useState } from 'react';
-import { fetchTemperatura, fetchPrecipitaciones } from './services/clima';
+import { useEffect, useState } from 'react';
+import { fetchPrecipitaciones } from './services/precipitaciones';
+import { fetchTemperatura } from './services/temperaturas';
 import WeatherModal from './components/WeatherModal';
 
 
 const CIUDADES = {
-  ushuaia: { name: 'Ushuaia', lat: -54.8019, lon: -68.303, emoji: '🏔️' },
-  rio_grande: { name: 'Río Grande', lat: -53.7877, lon: -67.7032, emoji: '🌾' },
-  tolhuin: { name: 'Tolhuin', lat: -54.5106, lon: -67.1923, emoji: '🌲' },
+  ushuaia: { nombre: 'Ushuaia', lat: -54.8019, lon: -68.303, emoji: '🏔️' },
+  rio_grande: { nombre: 'Río Grande', lat: -53.7877, lon: -67.7032, emoji: '🌾' },
+  tolhuin: { nombre: 'Tolhuin', lat: -54.5106, lon: -67.1923, emoji: '🌲' },
 };
 
+interface Ciudad {
+  nombre: string;
+  lat: number;
+  lon: number;
+  emoji: string;
+}
 function App() {
-  //En React se agrupa el estado en un único objeto usando useState para replicar el useStore de Qwik
   const [state, setState] = useState({
-    ciudadSeleccionada: 'ushuaia' as keyof typeof CIUDADES,
+    ciudades: { ...CIUDADES } as Record<string, Ciudad>,
+    ciudadSeleccionada: 'ushuaia' as string, 
     loading: false,
     tempData: null as number | null,
     precipData: null as number | null,
     showModalTemp: false,
     showModalPrecip: false,
+    
+    nuevoNombreCiudad: '',
+    nuevaLatitud: '',
+    nuevaLongitud: '',
   });
+
+  
+  useEffect(() => {
+    const locales = localStorage.getItem('ciudadesCustom');
+    if (locales) {
+      try {
+        const parsedCustom = JSON.parse(locales);
+        setState(prev => ({
+          ...prev,
+          ciudades: { ...CIUDADES, ...parsedCustom }
+        }));
+      } catch (e) {
+        console.error("Error al parsear ciudades del localStorage", e);
+      }
+    }
+  }, []); 
+
+  const ciudadActual = state.ciudades[state.ciudadSeleccionada] || CIUDADES['ushuaia'];
+  const agregarCiudad = () => {
+    const nombre = state.nuevoNombreCiudad.trim();
+    const lat = parseFloat(state.nuevaLatitud);
+    const lon = parseFloat(state.nuevaLongitud);
+    
+    if (!nombre || isNaN(lat) || isNaN(lon)) {
+      alert("Por favor completa todos los campos con valores numéricos válidos.");
+      return;
+    }
+    
+    const key = nombre.toLowerCase().replace(/\s+/g, '_');
+    
+    const nuevaCiudad: Ciudad = {
+      nombre,
+      lat,
+      lon,
+      emoji: '🏙️'
+    };
+
+    const locales = localStorage.getItem('ciudadesCustom');
+    const ciudadesCustom = locales ? JSON.parse(locales) : {};
+    ciudadesCustom[key] = nuevaCiudad;
+    localStorage.setItem('ciudadesCustom', JSON.stringify(ciudadesCustom));
+
+    setState(prev => ({
+      ...prev,
+      ciudades: {
+        ...prev.ciudades,
+        [key]: nuevaCiudad
+      },
+      ciudadSeleccionada: key,
+      nuevoNombreCiudad: '',
+      nuevaLatitud: '',
+      nuevaLongitud: '',
+    }));
+  };
 
   const verTemperatura = async () => {
     setState(prev => ({ ...prev, loading: true, showModalTemp: true }));
-    const geo = CIUDADES[state.ciudadSeleccionada];
+    const geo = state.ciudades[state.ciudadSeleccionada];
+    if (!geo) return;
     
     try {
       const data = await fetchTemperatura(geo.lat, geo.lon);
@@ -36,7 +102,8 @@ function App() {
 
   const verPrecipitaciones = async () => {
     setState(prev => ({ ...prev, loading: true, showModalPrecip: true }));
-    const geo = CIUDADES[state.ciudadSeleccionada];
+    const geo = state.ciudades[state.ciudadSeleccionada];
+    if (!geo) return;
 
     try {
       const data = await fetchPrecipitaciones(geo.lat, geo.lon);
@@ -47,13 +114,10 @@ function App() {
       setState(prev => ({ ...prev, loading: false }));
     }
   };
-
   return (
     <div style={containerStyle}>
-      {/* Background decorativo */}
       <div style={bgDecorativeStyle}></div>
       
-      {/* Header */}
       <header style={headerStyle}>
         <h1 style={titleStyle}>Clima TDF</h1>
         <p style={subtitleStyle}>Tierra del Fuego, Argentina</p>
@@ -61,7 +125,6 @@ function App() {
 
       {/* Card principal */}
       <div style={cardStyle}>
-        {/* Selector de ciudad */}
         <div style={selectorContainerStyle}>
           <label htmlFor="city-select" style={labelStyle}>
             Selecciona tu ubicación
@@ -70,42 +133,75 @@ function App() {
             id="city-select"
             value={state.ciudadSeleccionada}
             onChange={(e) => {
-              const valor = e.target.value as keyof typeof CIUDADES;
-              setState(prev => ({ ...prev, ciudadSeleccionada: valor }));
+              setState(prev => ({ ...prev, ciudadSeleccionada: e.target.value }));
             }}
             style={selectStyle}
           >
-            <option value="ushuaia">🏔️ Ushuaia</option>
-            <option value="rio_grande">🌾 Río Grande</option>
-            <option value="tolhuin">🌲 Tolhuin</option>
+            {Object.entries(state.ciudades).map(([key, ciudad]) => (
+              <option key={key} value={key}>
+                {ciudad.emoji} {ciudad.nombre}
+              </option>
+            ))}
           </select>
         </div>
 
-        {/* Botones de acción */}
         <div style={buttonContainerStyle}>
-          <button 
-            onClick={verTemperatura} 
-            style={buttonStyle}
-            className="btn-primary"
-          >
+          <button onClick={verTemperatura} style={buttonStyle} className="btn-primary">
             <span style={buttonIconStyle}>🌡️</span>
             Temperatura
           </button>
-          <button 
-            onClick={verPrecipitaciones} 
-            style={buttonStyle}
-            className="btn-secondary"
-          >
+          <button onClick={verPrecipitaciones} style={buttonStyle} className="btn-secondary">
             <span style={buttonIconStyle}>☔</span>
             Precipitaciones
           </button>
         </div>
       </div>
 
-      {/* Modales */}
+      <hr style={separadorStyle} />
+
+      {/* Card del Formulario de carga */}
+      <div style={cardStyle}>
+        <div style={formContainerStyle}>
+          <h3 style={formTitleStyle}>Agregar nueva ubicación</h3>
+          
+          <div style={inputGroupStyle}>
+            <input 
+              type="text" 
+              placeholder="Nombre de la ciudad" 
+              value={state.nuevoNombreCiudad}
+              onChange={(e) => setState(prev => ({ ...prev, nuevoNombreCiudad: e.target.value }))}
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={inlineInputsStyle}>
+            <input 
+              type="number" 
+              step="any"
+              placeholder="Latitud (ej: -54.8)" 
+              value={state.nuevaLatitud}
+              onChange={(e) => setState(prev => ({ ...prev, nuevaLatitud: e.target.value }))}
+              style={inputStyle}
+            />
+            <input 
+              type="number" 
+              step="any"
+              placeholder="Longitud (ej: -68.3)" 
+              value={state.nuevaLongitud}
+              onChange={(e) => setState(prev => ({ ...prev, nuevaLongitud: e.target.value }))}
+              style={inputStyle}
+            />
+          </div>
+
+          <button onClick={agregarCiudad} style={addButtonStyle}>
+            ➕ Guardar ubicación
+          </button>
+        </div>
+      </div>
+
       <WeatherModal
         isOpen={state.showModalTemp}
-        title={CIUDADES[state.ciudadSeleccionada === undefined ? state.ciudadSeleccionada : state.ciudadSeleccionada].name}
+        title={ciudadActual.nombre}
         emoji="🌡️"
         value={state.tempData}
         unit="°C"
@@ -117,7 +213,7 @@ function App() {
 
       <WeatherModal
         isOpen={state.showModalPrecip}
-        title={CIUDADES[state.ciudadSeleccionada].name}
+        title={ciudadActual.nombre}
         emoji="💧"
         value={state.precipData}
         unit="milímetros"
@@ -249,5 +345,58 @@ const buttonStyle = {
 const buttonIconStyle = {
   fontSize: '20px',
  };
+
+const separadorStyle = {
+  width: '80%',
+  border: '0',
+  margin: '30px 0',
+  background: 'rgba(255, 255, 255, 0.2)',
+};
+
+const formContainerStyle = {
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: '12px',
+};
+
+const formTitleStyle = {
+  fontSize: '16px',
+  fontWeight: 600,
+  color: '#ffffff',
+  marginBottom: '4px',
+};
+
+const inputGroupStyle = {
+  width: '100%',
+};
+
+const inlineInputsStyle = {
+  display: 'flex',
+  gap: '12px',
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px 14px',
+  fontSize: '14px',
+  border: '1px solid rgba(255,255,255,0.3)',
+  borderRadius: '8px',
+  background: 'rgba(255, 255, 255, 0.9)',
+  color: '#1a3a52',
+  fontFamily: "'Inter', sans-serif",
+};
+
+const addButtonStyle = {
+  padding: '12px',
+  fontSize: '14px',
+  fontWeight: 600,
+  background: '#2ecc71',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  transition: 'background 0.2s ease',
+  marginTop: '6px',
+};
 
 export default App;
