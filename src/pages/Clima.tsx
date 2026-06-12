@@ -104,10 +104,12 @@ export const Clima = () => {
 
         <div style={buttonContainerStyle}>
           <button onClick={verTemperatura} style={buttonStyle} className="btn-primary">
+            <span className='shine'/>
             <span style={buttonIconStyle}>🌡️</span>
             Temperatura
           </button>
           <button onClick={verPrecipitaciones} style={buttonStyle} className="btn-secondary">
+            <span className='shine'/>
             <span style={buttonIconStyle}>☔</span>
             Precipitaciones
           </button>
@@ -240,7 +242,6 @@ const buttonStyle = {
   fontWeight: 600,
   border: '1px solid rgba(255,255,255,0.15)',
   borderRadius: '16px',
-  color: '#000000',
   cursor: 'pointer',
   display: 'flex' as const,
   alignItems: 'center' as const,
